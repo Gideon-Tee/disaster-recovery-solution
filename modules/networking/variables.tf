@@ -1,0 +1,28 @@
+variable "region" {
+  description = "AWS region for networking resources"
+  type        = string
+}
+
+variable "vpc_cidr" {
+  description = "CIDR block for the VPC"
+  type        = string
+  default     = "12.0.0.0/16"
+}
+
+variable "public_subnet_cidrs" {
+  description = "CIDR blocks for public subnets"
+  type        = list(string)
+  default     = ["12.0.1.0/24"]
+}
+
+variable "private_subnet_cidrs" {
+  description = "CIDR blocks for private subnets"
+  type        = list(string)
+  default     = ["12.0.3.0/24"]
+}
+
+variable "environment" {
+  description = "Environment tag (primary/dr)"
+  type        = string
+}
+
