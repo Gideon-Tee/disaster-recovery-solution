@@ -12,6 +12,7 @@ terraform {
 # Default provider (primary region: eu-west-1)
 provider "aws" {
   region = "eu-west-1"
+  alias = "primary"
   default_tags {
     tags = {
       Environment = "primary"

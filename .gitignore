@@ -3,3 +3,4 @@
 create-files.sh
 .idea/
 
+terraform.tfstate*
