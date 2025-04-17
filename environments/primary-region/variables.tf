@@ -25,3 +25,9 @@ variable "environment" {
   description = "Environment tag (primary/dr)"
   type        = string
 }
+
+variable "key_name" {
+  description = "Key pair for ssh"
+  type = string
+  default = "sandbox_ssh"
+}
