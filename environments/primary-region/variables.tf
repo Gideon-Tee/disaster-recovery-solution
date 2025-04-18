@@ -31,3 +31,12 @@ variable "key_name" {
   type = string
   default = "sandbox_ssh"
 }
+
+variable "db_name" {
+  description = "Database name"
+  type = string
+  default = "appDB"
+}
+
+variable "aws_access_key" {}
+variable "aws_secret_key" {}

@@ -15,27 +15,42 @@ data "aws_ami" "ubuntu" {
 # Launch template for instances
 resource "aws_launch_template" "app_lt" {
   name_prefix   = "${var.environment}-app-"
-  image_id      = coalesce(var.ami_id, data.aws_ami.ubuntu[0].id)
+  image_id = coalesce(var.ami_id, data.aws_ami.ubuntu[0].id)
   instance_type = var.instance_type
-  key_name      = var.key_name
+  key_name = var.key_name
 
   # Docker setup and container run script
   user_data = base64encode(<<-EOF
               #!/bin/bash
               # Install Docker
-              sudo apt-get update
+              sudo apt-get update -y
               sudo apt-get install -y docker.io
-              sudo systemctl start docker
               sudo systemctl enable docker
+              sudo systemctl start docker
 
-              # Run your public Docker image
-              sudo docker run -d --name app -p 80:8000 gideontee/dwom:latest
+              # Pull and run the app with environment variables
+              sudo docker run -d \
+                -e AWS_ACCESS_KEY=${var.aws_access_key} \
+                -e AWS_SECRET_KEY=${var.aws_secret_key} \
+                -e AWS_REGION=${var.region} \
+                -e S3_BUCKET_NAME=${var.s3_bucket_name} \
+                -e MYSQL_USER=${var.db_username} \
+                -e MYSQL_PASSWORD=${var.db_password} \
+                -e MYSQL_HOST=${var.db_host} \
+                -e MYSQL_DB=${var.db_name} \
+                -p 5000:5000 \
+                gideontee/flask-blog:latest
               EOF
-             )
+  )
+
+  iam_instance_profile {
+    arn = var.iam_instance_profile_arn  # From IAM module
+  }
+
 
   network_interfaces {
     associate_public_ip_address = true
-    security_groups             = [aws_security_group.app_sg.id]
+    security_groups = [aws_security_group.app_sg.id]
   }
 
   tag_specifications {

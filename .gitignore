@@ -4,3 +4,5 @@ create-files.sh
 .idea/
 
 terraform.tfstate*
+terraform.tfvars
+./environments/primary-region/terraform.tfvars

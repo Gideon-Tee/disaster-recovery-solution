@@ -36,5 +36,37 @@ module "primary_compute" {
   instance_type = "t2.micro"  # Override default
   key_name      =   var.key_name
   target_group_arns = [module.primary_load_balancer.target_group_arn]
+  iam_instance_profile_arn  = module.iam.ec2_instance_profile_arn
+  s3_bucket_name            = module.storage.blog_bucket_id
+  db_username               = module.primary_db.db_username
+  db_password               = module.primary_db.db_password
+  db_host                   = module.primary_db.primary_db_endpoint
+  db_name                   = "flask_blog"
+  region = var.region
+  aws_access_key = var.aws_access_key
+  aws_secret_key = var.aws_secret_key
 }
 
+# Primary RDS instance
+module "primary_db" {
+  source             = "../../modules/database"
+  environment        = "primary"
+  vpc_id             = module.primary_network.vpc_id
+  private_subnet_ids = module.primary_network.private_subnet_ids
+  database_engine    = "mysql"
+  db_name = var.db_name
+
+}
+
+
+module "storage" {
+  source       = "../../modules/storage"
+  environment  = "primary"
+  ec2_role_arn = module.iam.ec2_role_arn
+}
+
+module "iam" {
+  source          = "../../modules/iam"
+  environment     = "primary"
+  s3_bucket_name  = module.storage.blog_bucket_id
+}

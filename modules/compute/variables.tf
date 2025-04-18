@@ -48,3 +48,16 @@ variable "target_group_arns" {
   type        = list(string)
   default     = []
 }
+
+variable "iam_instance_profile_arn" {
+  type = string
+}
+
+variable "aws_access_key" {}
+variable "aws_secret_key" {}
+variable "region" {}
+variable "s3_bucket_name" {}
+variable "db_username" {}
+variable "db_password" {}
+variable "db_host" {}
+variable "db_name" {}
