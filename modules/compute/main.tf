@@ -38,7 +38,7 @@ resource "aws_launch_template" "app_lt" {
                 -e MYSQL_PASSWORD=${var.db_password} \
                 -e MYSQL_HOST=${var.db_host} \
                 -e MYSQL_DB=${var.db_name} \
-                -p 5000:5000 \
+                -p 80:5000 \
                 gideontee/flask-blog:latest
               EOF
   )
@@ -100,7 +100,7 @@ resource "aws_security_group" "app_sg" {
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]  # Adjust for ALB-only access
+    security_groups = var.load_balancer_sg_id
   }
 
   egress {

@@ -5,3 +5,4 @@ output "Load_balancer_dns" {
 output "RDS_endpoint" {
   value = module.primary_db.primary_db_endpoint
 }
+

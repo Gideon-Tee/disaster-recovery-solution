@@ -41,10 +41,11 @@ module "primary_compute" {
   db_username               = module.primary_db.db_username
   db_password               = module.primary_db.db_password
   db_host                   = module.primary_db.primary_db_endpoint
-  db_name                   = "flask_blog"
+  db_name                   = var.db_name
   region = var.region
   aws_access_key = var.aws_access_key
   aws_secret_key = var.aws_secret_key
+  load_balancer_sg_id = module.primary_load_balancer.load_balancer_sg_id
 }
 
 # Primary RDS instance
