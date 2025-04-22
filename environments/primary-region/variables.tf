@@ -28,14 +28,14 @@ variable "environment" {
 
 variable "key_name" {
   description = "Key pair for ssh"
-  type = string
-  default = "sandbox_ssh"
+  type        = string
+  default     = "sandbox_ssh"
 }
 
 variable "db_name" {
   description = "Database name"
-  type = string
-  default = "appDB"
+  type        = string
+  default     = "appDB"
 }
 
 variable "aws_access_key" {}
