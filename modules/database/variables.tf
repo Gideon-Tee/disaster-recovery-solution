@@ -42,3 +42,13 @@ variable "allocated_storage" {
   type        = number
   default     = 20
 }
+
+variable "dr_vpc_id" {
+  description = "VPC ID in DR region"
+  type        = string
+}
+
+variable "dr_private_subnet_ids" {
+  description = "List of private subnet IDs in DR region"
+  type        = list(string)
+}

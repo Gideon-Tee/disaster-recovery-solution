@@ -61,6 +61,8 @@ module "primary_db" {
   database_engine    = "mysql"
   db_name = var.db_name
 
+  dr_private_subnet_ids = module.primary_network.dr_private_subnet_ids
+  dr_vpc_id = module.primary_network.dr_vpc_id
 }
 
 

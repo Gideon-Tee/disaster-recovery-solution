@@ -1,4 +1,21 @@
-# RDS, read replicas, parameter store/secrets
+provider "aws" {
+  region = "us-east-1"
+  alias = "dr"
+}
+
+# KMS key in primary region
+resource "aws_kms_key" "primary_db_key" {
+  description             = "KMS key for primary RDS encryption"
+  multi_region            = true
+  enable_key_rotation     = true
+}
+
+# Replicate KMS key to DR region
+resource "aws_kms_replica_key" "dr_db_key" {
+  provider          = aws.dr
+  description       = "Replica KMS key for DR RDS encryption"
+  primary_key_arn   = aws_kms_key.primary_db_key.arn
+}
 
 # RDS Credentials managed by SSM Parameter Store
 resource "random_password" "db_password" {
@@ -70,6 +87,84 @@ resource "aws_db_instance" "primary_db" {
   vpc_security_group_ids  = [aws_security_group.db_sg.id]
   skip_final_snapshot     = true  # Disable for production!
   storage_encrypted       = true  # Encrypt data at rest
+  kms_key_id = aws_kms_key.primary_db_key.arn
   backup_retention_period = 7     # Daily backups for 7 days
 }
 
+
+# DR Region Security Group
+resource "aws_security_group" "dr_db_sg" {
+  provider    = aws.dr
+  name        = "${var.environment}-dr-db-sg"
+  description = "Allow traffic from DR app servers to RDS"
+  vpc_id      = var.dr_vpc_id  # Need to pass DR VPC ID from DR networking module
+
+  ingress {
+    from_port   = 3306
+    to_port     = 3306
+    protocol    = "tcp"
+    cidr_blocks = ["12.0.0.0/16"]  # DR VPC CIDR
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "dr-rds-sg"
+  }
+}
+
+# DR Subnet Group
+resource "aws_db_subnet_group" "dr_db_subnet_group" {
+  provider    = aws.dr
+  name        = "${var.environment}-dr-db-subnet-group"
+  subnet_ids  = var.dr_private_subnet_ids  # Need to pass DR subnet IDs
+  description = "Subnet group for DR RDS instance"
+
+  tags = {
+    Name = "dr-db-subnet-group"
+  }
+}
+
+# Cross-region read replica in DR region
+resource "aws_db_instance" "dr_replica" {
+  provider               = aws.dr
+  identifier             = "${var.environment}-dr-replica"
+  replicate_source_db    = aws_db_instance.primary_db.arn
+  instance_class         = var.instance_class
+  allocated_storage      = var.allocated_storage
+  engine                 = var.database_engine
+  engine_version         = var.database_version
+  skip_final_snapshot    = true
+  storage_encrypted      = true
+  kms_key_id = aws_kms_replica_key.dr_db_key.arn
+  backup_retention_period = 0  # Backups managed by primary
+
+  # Important DR settings
+  availability_zone      = "us-east-1a"
+  multi_az               = false  # Can enable if needed for DR region HA
+
+  # Copy tags from primary
+  tags = {
+    Name        = "${var.environment}-dr-replica"
+    Environment = var.environment
+    Role        = "dr-replica"
+  }
+
+  # Use DR region networking
+  vpc_security_group_ids = [aws_security_group.dr_db_sg.id]
+  db_subnet_group_name   = aws_db_subnet_group.dr_db_subnet_group.name
+
+  lifecycle {
+    ignore_changes = [
+      # Ignore changes to these attributes as they're managed by the primary
+      replicate_source_db,
+      engine_version,
+      storage_encrypted
+    ]
+  }
+}
