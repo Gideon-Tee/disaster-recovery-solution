@@ -6,3 +6,4 @@ create-files.sh
 terraform.tfstate*
 terraform.tfvars
 ./environments/primary-region/terraform.tfvars
+./environments/primary-region/.terraform.tfstate*

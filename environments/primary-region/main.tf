@@ -3,6 +3,10 @@ provider "aws" {
   alias = "primary"
 }
 
+provider "aws" {
+  region = "us-east-1"
+  alias = "dr"
+}
 # Primary region configuration
 
 # Primary vpc and networking
@@ -64,6 +68,7 @@ module "storage" {
   source       = "../../modules/storage"
   environment  = "primary"
   ec2_role_arn = module.iam.ec2_role_arn
+  dr_ec2_role_arn = module.iam.dr_ec2_role_arn
 }
 
 module "iam" {
