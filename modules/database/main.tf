@@ -131,39 +131,39 @@ resource "aws_db_subnet_group" "dr_db_subnet_group" {
 }
 
 # Cross-region read replica in DR region
-resource "aws_db_instance" "dr_replica" {
-  provider               = aws.dr
-  identifier             = "${var.environment}-dr-replica"
-  replicate_source_db    = aws_db_instance.primary_db.arn
-  instance_class         = var.instance_class
-  engine                 = var.database_engine
-  engine_version         = var.database_version
-  skip_final_snapshot    = true
-  storage_encrypted      = true
-  kms_key_id = aws_kms_replica_key.dr_db_key.arn
-  backup_retention_period = 0  # Backups managed by primary
-
-  # Important DR settings
-  availability_zone      = "us-east-1a"
-  multi_az               = false  # Can enable if needed for DR region HA
-
-  # Copy tags from primary
-  tags = {
-    Name        = "${var.environment}-dr-replica"
-    Environment = var.environment
-    Role        = "dr-replica"
-  }
-
-  # Use DR region networking
-  vpc_security_group_ids = [aws_security_group.dr_db_sg.id]
-  db_subnet_group_name   = aws_db_subnet_group.dr_db_subnet_group.name
-
-  lifecycle {
-    ignore_changes = [
-      # Ignore changes to these attributes as they're managed by the primary
-      replicate_source_db,
-      engine_version,
-      storage_encrypted
-    ]
-  }
-}
+# resource "aws_db_instance" "dr_replica" {
+#   provider               = aws.dr
+#   identifier             = "${var.environment}-dr-replica"
+#   replicate_source_db    = aws_db_instance.primary_db.arn
+#   instance_class         = var.instance_class
+#   engine                 = var.database_engine
+#   engine_version         = var.database_version
+#   skip_final_snapshot    = true
+#   storage_encrypted      = true
+#   kms_key_id = aws_kms_replica_key.dr_db_key.arn
+#   backup_retention_period = 0  # Backups managed by primary
+#
+#   # Important DR settings
+#   availability_zone      = "us-east-1a"
+#   multi_az               = false  # Can enable if needed for DR region HA
+#
+#   # Copy tags from primary
+#   tags = {
+#     Name        = "${var.environment}-dr-replica"
+#     Environment = var.environment
+#     Role        = "dr-replica"
+#   }
+#
+#   # Use DR region networking
+#   vpc_security_group_ids = [aws_security_group.dr_db_sg.id]
+#   db_subnet_group_name   = aws_db_subnet_group.dr_db_subnet_group.name
+#
+#   lifecycle {
+#     ignore_changes = [
+#       # Ignore changes to these attributes as they're managed by the primary
+#       replicate_source_db,
+#       engine_version,
+#       storage_encrypted
+#     ]
+#   }
+# }

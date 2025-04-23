@@ -9,3 +9,7 @@ output "RDS_endpoint" {
 output "DR_bucket_arn" {
   value = module.storage.dr_bucket_arn
 }
+
+output "Global_Accelerator_dns_name" {
+  value = module.global.global_accelerator_dns_name
+}

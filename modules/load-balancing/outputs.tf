@@ -3,6 +3,16 @@ output "alb_dns_name" {
   value       = aws_lb.app_alb.dns_name
 }
 
+output "primary_alb_arn" {
+  description = "ARN of ALB in primary region"
+  value = aws_lb.app_alb.arn
+}
+
+output "dr_alb_arn" {
+  description = "ARN of ALB in dr region"
+  value = aws_lb.dr-app_alb.arn
+}
+
 output "dr_alb_dns_name" {
   description = "DNS name of the DR ALB"
   value       = aws_lb.dr-app_alb.dns_name

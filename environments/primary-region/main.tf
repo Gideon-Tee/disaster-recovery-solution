@@ -91,3 +91,11 @@ module "ssm_ami_automation" {
 
   primary_instance_id = module.primary_compute.primary_instance_id
 }
+
+module "global" {
+  source = "../../global"
+  primary_region = var.region
+  dr_region = var.dr_region
+  primary_alb_arn = module.primary_load_balancer.primary_alb_arn
+  dr_alb_arn = module.primary_load_balancer.dr_alb_arn
+}

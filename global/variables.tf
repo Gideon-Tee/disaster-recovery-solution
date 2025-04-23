@@ -10,4 +10,12 @@ variable "dr_region" {
   default     = "us-east-1"
 }
 
-data "aws_caller_identity" "current" {}  # Used for S3 bucket naming
+variable "primary_alb_arn" {
+  description = "ARN of the primary ALB"
+  type        = string
+}
+
+variable "dr_alb_arn" {
+  description = "ARN of the DR ALB"
+  type        = string
+}
