@@ -136,7 +136,6 @@ resource "aws_db_instance" "dr_replica" {
   identifier             = "${var.environment}-dr-replica"
   replicate_source_db    = aws_db_instance.primary_db.arn
   instance_class         = var.instance_class
-  allocated_storage      = var.allocated_storage
   engine                 = var.database_engine
   engine_version         = var.database_version
   skip_final_snapshot    = true

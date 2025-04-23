@@ -14,5 +14,10 @@ output "security_group_id" {
 }
 
 output "primary_instance_id" {
-  value = aws_autoscaling_group.app_asg.
+  value = data.aws_instance.app_instance.id
+}
+
+output "dr_asg_name" {
+  description = "Name of the DR ASG"
+  value       = aws_autoscaling_group.dr-app_asg.name
 }

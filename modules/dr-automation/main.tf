@@ -2,6 +2,10 @@
 
 # SSM Automation Document to create AMI
 resource "aws_ssm_document" "create_ami" {
+  name = "CreateAMIFromInstance"
+  document_type = "Automation"
+  document_format = "YAML"
+
   content = <<DOC
 schemaVersion: '0.3'
 description: Create and copy AMI to DR region
@@ -106,7 +110,7 @@ resource "aws_iam_role_policy" "ssm_automation_policy" {
 resource "aws_cloudwatch_event_rule" "ami_creation_schedule" {
   name                = "AMICreationSchedule"
   description         = "Triggers SSM Automation to create AMI daily"
-  schedule_expression = "cron(0 2 * * ? *)" # Run daily at 2 AM UTC
+  schedule_expression = "cron(0 2 * * ? *)" # Run daily at 2 AM
 }
 
 resource "aws_cloudwatch_event_target" "ami_creation_target" {
@@ -121,3 +125,12 @@ resource "aws_cloudwatch_event_target" "ami_creation_target" {
     DestinationRegion = var.dr_region
   })
 }
+
+# Store latest AMI ID in Parameter Store
+# resource "aws_ssm_parameter" "latest_ami" {
+#   provider = aws.dr
+#   name     = "/app/latest-ami-id"
+#   type     = "String"
+#   value    = "placeholder" # Will be updated by Lambda
+#   overwrite = true
+# }

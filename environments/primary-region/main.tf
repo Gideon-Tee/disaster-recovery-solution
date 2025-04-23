@@ -29,6 +29,9 @@ module "primary_load_balancer" {
   vpc_id             = module.primary_network.vpc_id
   subnet_ids         = module.primary_network.public_subnet_ids # Public subnets for ALB
   security_group_ids = [module.primary_network.alb_security_group_id]
+  dr_security_group_ids = [module.primary_network.dr_alb_security_group_id]
+  dr_subnet_ids = module.primary_network.dr_public_subnet_ids
+  dr_vpc_id          = module.primary_network.dr_vpc_id
 }
 
 # Primary region compute resources
@@ -36,7 +39,7 @@ module "primary_compute" {
   source                   = "../../modules/compute"
   environment              = var.environment
   vpc_id                   = module.primary_network.vpc_id            # From networking module
-  subnet_ids               = module.primary_network.public_subnet_ids # Private subnets
+  subnet_ids               = module.primary_network.public_subnet_ids # Public subnets
   instance_type            = "t2.micro"                               # Override default
   key_name                 = var.key_name
   target_group_arns        = [module.primary_load_balancer.target_group_arn]
@@ -50,6 +53,10 @@ module "primary_compute" {
   aws_access_key           = var.aws_access_key
   aws_secret_key           = var.aws_secret_key
   load_balancer_sg_id      = module.primary_load_balancer.load_balancer_sg_id
+  dr-subnet_ids = module.primary_network.dr_public_subnet_ids
+  dr_vpc_id                = module.primary_network.dr_vpc_id
+  dr_load_balancer_sg_id   = module.primary_load_balancer.dr_load_balancer_sg_id
+  dr-target_group_arns = [module.primary_load_balancer.dr_target_group_arn]
 }
 
 # Primary RDS instance
@@ -77,4 +84,10 @@ module "iam" {
   source         = "../../modules/iam"
   environment    = "primary"
   s3_bucket_name = module.storage.blog_bucket_id
+}
+
+module "ssm_ami_automation" {
+  source = "../../modules/dr-automation"
+
+  primary_instance_id = module.primary_compute.primary_instance_id
 }
