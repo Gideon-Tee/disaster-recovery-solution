@@ -18,6 +18,16 @@ output "dr_alb_dns_name" {
   value       = aws_lb.dr-app_alb.dns_name
 }
 
+output "primary_alb_arn_suffix" {
+  description = "ARN suffix of the primary ALB"
+  value = aws_lb.app_alb.arn_suffix
+}
+
+output "primary_target_group_arn_suffix" {
+  description = "ARN suffix of the primary ALB target group"
+  value = aws_lb_target_group.app_tg.arn_suffix
+}
+
 output "target_group_arn" {
   description = "ARN of the target group (for ASG attachment)"
   value       = aws_lb_target_group.app_tg.arn

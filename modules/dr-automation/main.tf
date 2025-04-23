@@ -134,3 +134,48 @@ resource "aws_cloudwatch_event_target" "ami_creation_target" {
 #   value    = "placeholder" # Will be updated by Lambda
 #   overwrite = true
 # }
+
+# CloudWatch Alarm for Primary ALB (HealthyHostCount)
+resource "aws_cloudwatch_metric_alarm" "primary_alb_healthy_hosts" {
+  alarm_name          = "PrimaryALBHealthyHosts"
+  comparison_operator = "LessThanThreshold"
+  evaluation_periods  = 2
+  metric_name         = "HealthyHostCount"
+  namespace           = "AWS/ApplicationELB"
+  period              = 60 # 1 minute
+  statistic           = "Average"
+  threshold           = 1 # Alarm if fewer than 1 healthy host
+  alarm_description   = "Triggers when the primary ALB has fewer than 1 healthy host"
+  treat_missing_data  = "breaching" # Treat missing data as unhealthy
+
+  dimensions = {
+    LoadBalancer = var.primary_alb_arn_suffix # ARN suffix of the primary ALB
+    TargetGroup  = var.primary_target_group_arn_suffix
+  }
+
+  # Placeholder for SNS topic or Lambda trigger (to be added later)
+  alarm_actions = []
+  ok_actions    = []
+}
+
+# CloudWatch Alarm for Primary RDS (CPUUtilization)
+resource "aws_cloudwatch_metric_alarm" "primary_rds_cpu" {
+  alarm_name          = "PrimaryRDSCPUUtilization"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 2
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/RDS"
+  period              = 60 # 1 minute
+  statistic           = "Average"
+  threshold           = 80 # Alarm if CPU utilization exceeds 80%
+  alarm_description   = "Triggers when the primary RDS CPU utilization exceeds 80%"
+  treat_missing_data  = "breaching" # Treat missing data as unhealthy
+
+  dimensions = {
+    DBInstanceIdentifier = var.primary_rds_identifier
+  }
+
+  # Placeholder for SNS topic or Lambda trigger (to be added later)
+  alarm_actions = []
+  ok_actions    = []
+}

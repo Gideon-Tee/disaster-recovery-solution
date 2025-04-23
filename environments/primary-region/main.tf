@@ -86,10 +86,12 @@ module "iam" {
   s3_bucket_name = module.storage.blog_bucket_id
 }
 
-module "ssm_ami_automation" {
+module "dr-automation" {
   source = "../../modules/dr-automation"
-
   primary_instance_id = module.primary_compute.primary_instance_id
+  primary_alb_arn_suffix = module.primary_load_balancer.primary_alb_arn_suffix
+  primary_rds_identifier = module.primary_db.primary_rds_identifier
+  primary_target_group_arn_suffix = module.primary_load_balancer.primary_target_group_arn_suffix
 }
 
 module "global" {

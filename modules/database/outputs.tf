@@ -10,3 +10,7 @@ output "db_username" {
 output "db_password" {
   value = aws_db_instance.primary_db.password
 }
+
+output "primary_rds_identifier" {
+  value = aws_db_instance.primary_db.identifier
+}
