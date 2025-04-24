@@ -57,6 +57,8 @@ module "primary_compute" {
   dr_vpc_id                = module.primary_network.dr_vpc_id
   dr_load_balancer_sg_id   = module.primary_load_balancer.dr_load_balancer_sg_id
   dr-target_group_arns = [module.primary_load_balancer.dr_target_group_arn]
+  dr_db_host               = module.primary_db.dr_replica_db_endpoint
+  dr_s3_bucket_name        = module.storage.dr_s3_bucket_name
 }
 
 # Primary RDS instance
@@ -92,6 +94,10 @@ module "dr-automation" {
   primary_alb_arn_suffix = module.primary_load_balancer.primary_alb_arn_suffix
   primary_rds_identifier = module.primary_db.primary_rds_identifier
   primary_target_group_arn_suffix = module.primary_load_balancer.primary_target_group_arn_suffix
+  dr_asg_name = module.primary_compute.dr_asg_name
+  dr_rds_identifier = module.primary_db.dr_rds_identifier
+  dr_s3_bucket_name = module.storage.dr_s3_bucket_name
+  account_id = var.account_id
 }
 
 module "global" {

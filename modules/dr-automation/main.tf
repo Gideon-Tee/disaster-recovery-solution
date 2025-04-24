@@ -153,8 +153,8 @@ resource "aws_cloudwatch_metric_alarm" "primary_alb_healthy_hosts" {
     TargetGroup  = var.primary_target_group_arn_suffix
   }
 
-  # Placeholder for SNS topic or Lambda trigger (to be added later)
-  alarm_actions = []
+  # Placeholder for SNS topic or Lambda trigger
+  alarm_actions = [aws_sns_topic.failover_notifications.arn]
   ok_actions    = []
 }
 
@@ -176,6 +176,133 @@ resource "aws_cloudwatch_metric_alarm" "primary_rds_cpu" {
   }
 
   # Placeholder for SNS topic or Lambda trigger (to be added later)
-  alarm_actions = []
+  alarm_actions = [aws_sns_topic.failover_notifications.arn]
   ok_actions    = []
+}
+
+
+# SNS Topic for CloudWatch Alarms
+resource "aws_sns_topic" "failover_notifications" {
+  name = "FailoverNotifications"
+}
+
+# SNS Topic Policy to allow CloudWatch to publish
+resource "aws_sns_topic_policy" "failover_notifications_policy" {
+  arn = aws_sns_topic.failover_notifications.arn
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect    = "Allow"
+        Principal = { Service = "cloudwatch.amazonaws.com" }
+        Action    = "sns:Publish"
+        Resource  = aws_sns_topic.failover_notifications.arn
+      }
+    ]
+  })
+}
+
+# Lambda Function for Failover
+resource "aws_lambda_function" "failover_handler" {
+  filename      = "${path.module}/failover_lambda.zip"
+  function_name = "FailoverHandler"
+  role          = aws_iam_role.lambda_role.arn
+  handler       = "failover_lambda.handler"
+  runtime       = "python3.9"
+  timeout       = 60
+
+  environment {
+    variables = {
+      DR_REGION            = var.dr_region
+      DR_RDS_IDENTIFIER    = var.dr_rds_identifier
+      DR_ASG_NAME          = var.dr_asg_name
+      DR_S3_BUCKET_NAME    = var.dr_s3_bucket_name
+      SSM_S3_PARAM_NAME    = "/dr/s3-bucket-name"
+      SSM_RDS_PARAM_NAME   = "/dr/rds-endpoint"
+    }
+  }
+}
+
+# Package Lambda Code
+data "archive_file" "failover_lambda_zip" {
+  type        = "zip"
+  source_file = "${path.module}/failover_lambda.py"
+  output_path = "${path.module}/failover_lambda.zip"
+}
+
+# Lambda IAM Role
+resource "aws_iam_role" "lambda_role" {
+  name = "FailoverLambdaRole"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect    = "Allow"
+        Principal = { Service = "lambda.amazonaws.com" }
+        Action    = "sts:AssumeRole"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy" "lambda_policy" {
+  name   = "FailoverLambdaPolicy"
+  role   = aws_iam_role.lambda_role.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = [
+          "rds:PromoteReadReplica",
+          "rds:DescribeDBInstances" # Added missing permission
+        ]
+        Resource = [
+          "arn:aws:rds:${var.dr_region}:${var.account_id}:db:${var.dr_rds_identifier}",
+          "arn:aws:rds:${var.primary_region}:${var.account_id}:db:${var.primary_rds_identifier}"
+        ]
+      },
+      {
+        Effect   = "Allow"
+        Action   = "autoscaling:UpdateAutoScalingGroup"
+        Resource = "arn:aws:autoscaling:${var.dr_region}:${var.account_id}:autoScalingGroup:*:autoScalingGroupName/${var.dr_asg_name}"
+      },
+      {
+        Effect   = "Allow"
+        Action   = [
+          "ssm:PutParameter",
+          "ssm:GetParameter"
+        ]
+        Resource = [
+          "arn:aws:ssm:${var.dr_region}:${var.account_id}:parameter/app/s3-bucket-name",
+          "arn:aws:ssm:${var.dr_region}:${var.account_id}:parameter/app/rds-endpoint"
+        ]
+      },
+      {
+        Effect   = "Allow"
+        Action   = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+# Lambda Permission for SNS
+resource "aws_lambda_permission" "allow_sns" {
+  statement_id  = "AllowExecutionFromSNS"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.failover_handler.function_name
+  principal     = "sns.amazonaws.com"
+  source_arn    = aws_sns_topic.failover_notifications.arn
+}
+
+# SNS Subscription for Lambda
+resource "aws_sns_topic_subscription" "lambda_subscription" {
+  topic_arn = aws_sns_topic.failover_notifications.arn
+  protocol  = "lambda"
+  endpoint  = aws_lambda_function.failover_handler.arn
 }

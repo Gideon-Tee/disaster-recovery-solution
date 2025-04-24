@@ -181,14 +181,16 @@ resource "aws_s3_bucket_policy" "dr_bucket_policy" {
   })
 }
 
-output "blog_bucket_arn" {
-  value = aws_s3_bucket.blog_bucket.arn
+resource "aws_ssm_parameter" "primary_s3_name" {
+  name = "/primary/s3-bucket-name"
+  type = "String"
+  value = aws_s3_bucket.blog_bucket.bucket
 }
 
-output "blog_bucket_id" {
-  value = aws_s3_bucket.blog_bucket.id
-}
 
-output "dr_bucket_arn" {
-  value = aws_s3_bucket.dr_bucket.arn
+resource "aws_ssm_parameter" "dr_s3_name" {
+  provider = aws.dr
+  name = "/dr/s3-bucket-name"
+  type = "String"
+  value = aws_s3_bucket.dr_bucket.bucket
 }

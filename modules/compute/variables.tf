@@ -79,6 +79,8 @@ variable "db_password" {}
 variable "db_host" {}
 variable "db_name" {}
 variable "load_balancer_sg_id" {}
+variable "dr_s3_bucket_name" {}
+variable "dr_db_host" {}
 
 variable "dr_vpc_id" {
   description = "DR region VPC id"

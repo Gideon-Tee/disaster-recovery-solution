@@ -165,9 +165,17 @@ resource "aws_launch_template" "dr" {
               sudo systemctl start docker
 
               # Pull and run the app with environment variables
-              # Using nginx for testing purposes
               sudo docker run -d \
-                -p 80:80 nginx:alpine
+                -e AWS_ACCESS_KEY=${var.aws_access_key} \
+                -e AWS_SECRET_KEY=${var.aws_secret_key} \
+                -e AWS_REGION=${var.dr_region} \
+                -e S3_BUCKET_NAME=${var.dr_s3_bucket_name} \
+                -e MYSQL_USER=${var.db_username} \
+                -e MYSQL_PASSWORD=${var.db_password} \
+                -e MYSQL_HOST=${var.dr_db_host} \
+                -e MYSQL_DB=${var.db_name} \
+                -p 80:5000 \
+                gideontee/flask-blog:latest
               EOF
   )
 
@@ -189,9 +197,9 @@ resource "aws_autoscaling_group" "dr-app_asg" {
   provider = aws.dr
   name                = "dr-app-asg"
   vpc_zone_identifier = var.dr-subnet_ids
-  min_size            = 1
+  min_size            = 0
   max_size            = var.max_size
-  desired_capacity    = 1
+  desired_capacity    = 0
 
   target_group_arns = var.dr-target_group_arns
 

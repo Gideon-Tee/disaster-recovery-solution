@@ -14,3 +14,11 @@ output "db_password" {
 output "primary_rds_identifier" {
   value = aws_db_instance.primary_db.identifier
 }
+
+output "dr_rds_identifier" {
+  value = aws_db_instance.dr_replica.identifier
+}
+
+output "dr_replica_db_endpoint" {
+  value = aws_db_instance.dr_replica.endpoint
+}

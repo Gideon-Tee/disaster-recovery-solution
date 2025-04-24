@@ -28,3 +28,9 @@ variable "primary_rds_identifier" {
   description = "Identifier of the primary RDS instance"
   type        = string
 }
+
+variable "dr_rds_identifier" {}
+variable "dr_asg_name" {}
+variable "dr_s3_bucket_name" {}
+
+variable "account_id" {}
