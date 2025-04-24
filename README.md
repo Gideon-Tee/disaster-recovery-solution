@@ -138,8 +138,8 @@ The Terraform code is organized into modules for modularity and reusability:
 
 1. **Clone the Repository**:
    ```bash
-   git clone <repository-url>
-   cd <repository-directory>
+   git clone https://github.com/Gideon-Tee/disaster-recovery-solution.git
+   cd disaster-recovery-solution/
    ```
 
 2. **Initialize Terraform**:
@@ -158,12 +158,16 @@ The Terraform code is organized into modules for modularity and reusability:
 
    Example `terraform.tfvars`:
    ```hcl
-   s3_bucket_name = "my-primary-bucket"
-   dr_ami_id      = "ami-1234567890abcdef0"
-   key_name       = "my-key-pair"
-   db_username    = "admin"
-   db_password    = "securepassword"
-   db_name        = "blogdb"
+    region               = "eu-west-1"
+    vpc_cidr             = "12.0.0.0/16"
+    public_subnet_cidrs  = ["12.0.1.0/24", "12.0.10.0/24"]
+    private_subnet_cidrs = ["12.0.3.0/24", "12.0.5.0/24"]
+    environment          = "primary"
+    db_name              = "appDB"
+    aws_secret_key       = ""
+    aws_access_key       = ""
+    dr_region = "us-east-1"
+    account_id = ""
    ```
 
 4. **Apply Terraform**:
@@ -296,10 +300,3 @@ The Terraform code is organized into modules for modularity and reusability:
 - **AMI Cleanup**: Add a scheduled Lambda to delete old AMIs.
 - **Enhanced Monitoring**: Add CloudWatch alarms for RDS `DatabaseConnections` or `ReplicaLag`.
 - **Cost Optimization**: Use Spot Instances or Savings Plans for EC2.
-
-## Contact
-For issues or questions, contact the project maintainer at `<your-email>` or open an issue in the repository.
-
----
-
-*Generated on April 24, 2025, by Grok 3, built by xAI.*
