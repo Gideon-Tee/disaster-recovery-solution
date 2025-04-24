@@ -1,3 +1,11 @@
+provider "aws" {
+  region = var.primary_region
+}
+
+provider "aws" {
+  region = var.dr_region
+  alias = "dr"
+}
 # Lambda, EventBridge, SSM Automation
 
 # SSM Automation Document to create AMI
@@ -67,6 +75,8 @@ mainSteps:
       Tags:
         - Key: Name
           Value: "App-AMI-{{ global:DATE_TIME }}-DR"
+        - Key: Environment
+          Value: "DR"
 DOC
 }
 
@@ -110,7 +120,7 @@ resource "aws_iam_role_policy" "ssm_automation_policy" {
 resource "aws_cloudwatch_event_rule" "ami_creation_schedule" {
   name                = "AMICreationSchedule"
   description         = "Triggers SSM Automation to create AMI daily"
-  schedule_expression = "cron(0 2 * * ? *)" # Run daily at 2 AM
+  schedule_expression = "cron(15 11 * * ? *)" # Run daily at 11 AM
 }
 
 resource "aws_cloudwatch_event_target" "ami_creation_target" {
@@ -126,14 +136,111 @@ resource "aws_cloudwatch_event_target" "ami_creation_target" {
   })
 }
 
-# Store latest AMI ID in Parameter Store
-# resource "aws_ssm_parameter" "latest_ami" {
-#   provider = aws.dr
-#   name     = "/app/latest-ami-id"
-#   type     = "String"
-#   value    = "placeholder" # Will be updated by Lambda
-#   overwrite = true
-# }
+
+# Lambda Function to Update Parameter Store with Latest AMI ID
+resource "aws_lambda_function" "update_ami_parameter" {
+  filename      = "${path.module}/update_ami_parameter_lambda.zip"
+  function_name = "UpdateAMIParameter"
+  role          = aws_iam_role.lambda_ami_role.arn
+  handler       = "update_ami_parameter_lambda.handler"
+  runtime       = "python3.9"
+
+  environment {
+    variables = {
+      PARAMETER_NAME = "/app/latest-ami-id"
+      REGION         = var.dr_region
+    }
+  }
+}
+
+# Package Lambda Code
+data "archive_file" "update_ami_lambda_zip" {
+  type        = "zip"
+  source_file = "${path.module}/update_ami_parameter_lambda.py"
+  output_path = "${path.module}/update_ami_parameter_lambda.zip"
+}
+
+# Lambda IAM Role for AMI Parameter Update
+resource "aws_iam_role" "lambda_ami_role" {
+  name = "LambdaUpdateAMIRole"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect    = "Allow"
+        Principal = { Service = "lambda.amazonaws.com" }
+        Action    = "sts:AssumeRole"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy" "lambda_ami_policy" {
+  name   = "LambdaUpdateAMIPolicy"
+  role   = aws_iam_role.lambda_ami_role.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = [
+          "ssm:PutParameter",
+          "ec2:DescribeImages"
+        ]
+        Resource = [
+          "arn:aws:ssm:${var.dr_region}:${var.account_id}:parameter/app/latest-ami-id",
+          "arn:aws:ec2:${var.dr_region}:${var.account_id}:image/*"
+        ]
+      },
+      {
+        Effect   = "Allow"
+        Action   = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+# Trigger Lambda After SSM Automation
+resource "aws_cloudwatch_event_rule" "ssm_completion" {
+  name        = "SSMCompletionTrigger"
+  description = "Triggers Lambda after SSM Automation completes"
+  event_pattern = jsonencode({
+    source      = ["aws.ssm"]
+    detail-type = ["SSM Automation Execution Status Change"]
+    detail = {
+      DocumentName = [aws_ssm_document.create_ami.name]
+      Status       = ["Success"]
+    }
+  })
+}
+
+resource "aws_cloudwatch_event_target" "lambda_target" {
+  rule      = aws_cloudwatch_event_rule.ssm_completion.name
+  target_id = "TriggerLambda"
+  arn       = aws_lambda_function.update_ami_parameter.arn
+}
+
+resource "aws_lambda_permission" "allow_eventbridge" {
+  statement_id  = "AllowExecutionFromEventBridge"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.update_ami_parameter.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.ssm_completion.arn
+}
+
+# Store Latest AMI ID in Parameter Store
+resource "aws_ssm_parameter" "latest_ami" {
+  provider = aws.dr
+  name     = "/app/latest-ami-id"
+  type     = "String"
+  value    = "placeholder" # Will be updated by Lambda
+  overwrite = true
+}
 
 # CloudWatch Alarm for Primary ALB (HealthyHostCount)
 resource "aws_cloudwatch_metric_alarm" "primary_alb_healthy_hosts" {
