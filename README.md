@@ -9,7 +9,7 @@ The primary goal is to maintain application uptime and data integrity in the eve
 ## Architecture
 
 The application is a Flask-based blog (`gideontee/flask-blog:latest`) running in Docker containers on EC2 instances. It uses an S3 bucket for static assets and an RDS MySQL database for persistent storage. The architecture is divided into primary and DR regions, with AWS Global Accelerator ensuring seamless traffic routing.
-
+![disaster-recovery-infra-diagram-updated.drawio.png](./disaster-recovery-infra-diagram-updated.drawio.png)
 ### Primary Region (eu-west-1)
 - **EC2 Instances**: Managed by an Auto Scaling Group (ASG) with a minimum of 1 and a maximum of 3 instances (`t3.micro`). Instances run the Flask app in Docker, configured via a user data script.
 - **Application Load Balancer (ALB)**: Distributes traffic to the ASG instances, with health checks ensuring only healthy instances receive traffic.
