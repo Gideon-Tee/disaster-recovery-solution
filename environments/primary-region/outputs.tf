@@ -13,3 +13,7 @@ output "DR_bucket_arn" {
 output "Global_Accelerator_dns_name" {
   value = module.global.global_accelerator_dns_name
 }
+
+output "DR_Load_balancer_dns" {
+  value = module.primary_load_balancer.dr_alb_dns_name
+}
