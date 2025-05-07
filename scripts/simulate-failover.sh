@@ -9,8 +9,8 @@ aws autoscaling update-auto-scaling-group \
   --desired-capacity 1 --min-size 0
 
 # DR ASG
-aws autoscaling update-auto-scaling-group \
-  --auto-scaling-group-name dr-app-asg \
-  --desired-capacity 0 --min-size 0 \
-  --region us-east-1
+#aws autoscaling update-auto-scaling-group \
+#  --auto-scaling-group-name dr-app-asg \
+#  --desired-capacity 0 --min-size 0 \
+#  --region us-east-1
 

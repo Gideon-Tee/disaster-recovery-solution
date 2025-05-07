@@ -169,12 +169,19 @@ resource "aws_s3_bucket_policy" "dr_bucket_policy" {
     Version = "2012-10-17",
     Statement = [
       {
-        Sid       = "AllowDRInstanceAccess",
+        Sid       = "AllowPublicRead",
+        Effect    = "Allow",
+        Principal = "*",
+        Action    = ["s3:GetObject"],
+        Resource  = ["${aws_s3_bucket.dr_bucket.arn}/*"]
+      },
+      {
+        Sid       = "AllowAppUpload",
         Effect    = "Allow",
         Principal = {
-          AWS = var.dr_ec2_role_arn  # DR EC2 instance role ARN
+          AWS = "*"
         },
-        Action    = ["s3:GetObject", "s3:PutObject"],
+        Action    = ["s3:PutObject", "s3:PutObjectAcl"],
         Resource  = ["${aws_s3_bucket.dr_bucket.arn}/*"]
       }
     ]
